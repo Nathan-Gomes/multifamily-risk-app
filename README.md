@@ -88,7 +88,7 @@ python3 -m pytest -q
 
 The included Dockerfile and `render.yaml` make the app ready for Render as a free web service named `nathan-fergo-risk-analyst`.
 
-Expected public URL after the Render service is created:
+Live Render URL:
 
 ```text
 https://nathan-fergo-risk-analyst.onrender.com
