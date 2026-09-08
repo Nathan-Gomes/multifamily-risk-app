@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Interactive multifamily portfolio risk and capital allocation dashboard with CMHC-aware financing assumptions.">
+  <title>Multifamily Portfolio Risk Workspace</title>
+  <link rel="stylesheet" href="/assets/styles.css">
+</head>
+<body>
+  <aside class="sidebar">
+    <a class="brand" href="/">
+      <span></span>
+      <strong>Portfolio Risk</strong>
+    </a>
+    <nav>
+      <a href="#overview">Overview</a>
+      <a href="#risk">Risk</a>
+      <a href="#scenarios">Scenarios</a>
+      <a href="#capital">Capital Plan</a>
+      <a href="#properties">Properties</a>
+    </nav>
+    <div class="sidebar-note">
+      CMHC-aware sample portfolio data. Built for analyst review, downside scenarios, and capital planning.
+    </div>
+  </aside>
+
+  <main class="page">
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">Multifamily portfolio management</p>
+        <h1>Portfolio risk workspace</h1>
+        <p class="lead">Review property risk, financing exposure, stress scenarios, and capital priorities from one operating view.</p>
+      </div>
+      <div class="top-actions">
+        <span id="scenarioBadge" class="status-chip">Base case</span>
+        <a href="/api/export" target="_blank" rel="noreferrer">Export JSON</a>
+        <button id="refreshButton" type="button">Refresh</button>
+      </div>
+    </header>
+
+    <section id="overview" class="metrics-grid"></section>
+
+    <section class="control-panel">
+      <div>
+        <p class="eyebrow">Scenario controls</p>
+        <h2>Change the assumptions</h2>
+        <p class="control-note">Rate shocks are applied differently by financing type, so CMHC-insured debt behaves differently from conventional, bridge, and construction debt.</p>
+      </div>
+      <div class="control-stack">
+        <div class="preset-row" aria-label="Scenario presets">
+          <button type="button" data-preset="base">Base</button>
+          <button type="button" data-preset="softness">Occupancy softness</button>
+          <button type="button" data-preset="refinance">Refinance shock</button>
+          <button type="button" data-preset="downside">Combined downside</button>
+        </div>
+        <form id="controls" class="controls">
+          <label>
+            <span>Occupancy shock</span>
+            <input name="occupancy_shock" type="range" min="-15" max="5" step="1" value="0">
+            <strong data-output="occupancy_shock">0%</strong>
+          </label>
+          <label>
+            <span>Expense change</span>
+            <input name="expense_shock" type="range" min="0" max="30" step="1" value="0">
+            <strong data-output="expense_shock">0%</strong>
+          </label>
+          <label>
+            <span>Rate shock</span>
+            <input name="rate_shock_bps" type="range" min="0" max="400" step="25" value="0">
+            <strong data-output="rate_shock_bps">0 bps</strong>
+          </label>
+          <label>
+            <span>Cap-rate shock</span>
+            <input name="cap_rate_shock_bps" type="range" min="0" max="250" step="25" value="0">
+            <strong data-output="cap_rate_shock_bps">0 bps</strong>
+          </label>
+          <label>
+            <span>Capital budget</span>
+            <input name="capital_budget" type="range" min="500000" max="5000000" step="250000" value="2000000">
+            <strong data-output="capital_budget">$2.0M</strong>
+          </label>
+        </form>
+      </div>
+    </section>
+
+    <section id="risk" class="split">
+      <article class="panel">
+        <div class="panel-head">
+          <div>
+            <p class="eyebrow">Risk matrix</p>
+            <h2>DSCR versus LTV</h2>
+          </div>
+          <span class="hint">Higher and further left is safer</span>
+        </div>
+        <div class="legend">
+          <span><i class="dot low"></i>Low</span>
+          <span><i class="dot moderate"></i>Moderate</span>
+          <span><i class="dot elevated"></i>Elevated</span>
+          <span><i class="dot high"></i>High</span>
+        </div>
+        <div id="riskMatrix" class="chart-box"></div>
+      </article>
+      <article class="panel">
+        <div class="panel-head">
+          <div>
+            <p class="eyebrow">Watchlist</p>
+            <h2>Scenario-adjusted watchlist</h2>
+          </div>
+        </div>
+        <div id="topRiskTable" class="table-wrap"></div>
+      </article>
+    </section>
+
+    <section id="scenarios" class="split">
+      <article class="panel">
+        <div class="panel-head">
+          <div>
+          <p class="eyebrow">Stress test</p>
+          <h2>Custom downside case</h2>
+          </div>
+        </div>
+        <div id="customScenario" class="scenario-summary"></div>
+      </article>
+      <article class="panel">
+        <div class="panel-head">
+          <div>
+            <p class="eyebrow">Standard cases</p>
+            <h2>Scenario comparison</h2>
+          </div>
+        </div>
+        <div id="scenarioBars" class="bars"></div>
+      </article>
+    </section>
+
+    <section id="capital" class="panel">
+      <div class="panel-head">
+        <div>
+          <p class="eyebrow">Capital planning</p>
+          <h2>Recommended project queue</h2>
+        </div>
+        <span class="hint">Ranked by return, risk reduction, current risk, and budget fit</span>
+      </div>
+      <div id="capitalTable" class="table-wrap"></div>
+    </section>
+
+    <section id="properties" class="split">
+      <article class="panel">
+        <div class="panel-head">
+          <div>
+            <p class="eyebrow">Concentration</p>
+            <h2>Market exposure</h2>
+          </div>
+        </div>
+        <div id="marketBars" class="bars"></div>
+        <div class="subsection-head">
+          <p class="eyebrow">Debt mix</p>
+          <h3>Financing exposure</h3>
+        </div>
+        <div id="loanTypeBars" class="bars"></div>
+      </article>
+      <article class="panel">
+        <div class="panel-head">
+          <div>
+            <p class="eyebrow">Property detail</p>
+            <h2>Inspect one asset</h2>
+          </div>
+        </div>
+        <select id="propertySelect"></select>
+        <div id="propertyDetail" class="detail-card"></div>
+      </article>
+    </section>
+  </main>
+
+  <script src="/assets/app.js"></script>
+</body>
+</html>
