@@ -1,7 +1,13 @@
 services:
   - type: web
-    name: multifamily-risk-app
-    env: docker
+    name: nathan-fergo-risk-analyst
+    runtime: docker
     plan: free
+    dockerfilePath: ./Dockerfile
     autoDeploy: true
     healthCheckPath: /api/health
+    envVars:
+      - key: PUBLIC_DEMO_READ_ONLY
+        value: "1"
+      - key: FERGO_APP_ENV
+        value: demo

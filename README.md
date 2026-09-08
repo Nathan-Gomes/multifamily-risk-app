@@ -7,7 +7,7 @@
 
 A working software version of the Multifamily Portfolio Risk and Capital Allocation Engine.
 
-[Portfolio page](https://www.nathan-gomes.com/Project-Multifamily-Risk-Engine.dc.html) | [Live report](https://www.nathan-gomes.com/multifamily-risk-report.html)
+[Live app](https://nathan-fergo-risk-analyst.onrender.com) | [Portfolio page](https://www.nathan-gomes.com/Project-Multifamily-Risk-Engine.dc.html) | [Live report](https://www.nathan-gomes.com/multifamily-risk-report.html)
 
 The app turns sample multifamily portfolio data into an interactive analyst dashboard for:
 
@@ -86,6 +86,12 @@ python3 -m pytest -q
 
 ## Deploy
 
-The included Dockerfile and `render.yaml` make the app ready for Render as a web service.
+The included Dockerfile and `render.yaml` make the app ready for Render as a free web service named `nathan-fergo-risk-analyst`.
+
+Expected public URL after the Render service is created:
+
+```text
+https://nathan-fergo-risk-analyst.onrender.com
+```
 
 This demo uses generated sample data only. It does not connect to real bank accounts, accounting systems, or client data.
