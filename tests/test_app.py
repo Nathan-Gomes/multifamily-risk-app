@@ -1,4 +1,16 @@
+from fastapi.testclient import TestClient
+
+from backend.main import app
 from backend.main import get_dashboard_payload
+
+
+client = TestClient(app)
+
+
+def test_health_endpoint_reports_demo_mode():
+    response = client.get("/api/health")
+    assert response.status_code == 200
+    assert response.json() == {"status": "ok", "mode": "demo"}
 
 
 def test_dashboard_payload_contains_core_sections():
@@ -53,3 +65,20 @@ def test_cmhc_debt_is_reported():
     assert 0 < payload["summary"]["cmhc_debt_share"] < 1
     loan_types = {row["loan_type"] for row in payload["concentration"]["loan_type"]}
     assert "CMHC-insured" in loan_types
+
+
+def test_property_detail_endpoint_returns_expected_sections():
+    response = client.get("/api/properties/P001")
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["property"]["property_id"] == "P001"
+    assert payload["latest_metrics"]["property_id"] == "P001"
+    assert payload["debt"]["property_id"] == "P001"
+    assert len(payload["history"]) > 0
+    assert len(payload["valuations"]) > 0
+
+
+def test_property_detail_endpoint_rejects_unknown_property():
+    response = client.get("/api/properties/UNKNOWN")
+    assert response.status_code == 404
+    assert response.json()["detail"] == "Property not found"
