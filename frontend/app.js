@@ -312,6 +312,26 @@ function renderDashboard() {
   renderBars("#marketBars", data.concentration.market, "market", "exposure_pct", percent, 6);
   renderBars("#loanTypeBars", data.concentration.loan_type, "loan_type", "exposure_pct", percent, 6);
   renderPropertySelect(data.properties);
+  const investment = data.investment;
+  const history = investment.history;
+  document.querySelector('#investmentMetrics').innerHTML = [
+    metric('Aggregate DSCR', `${number(investment.aggregate_dscr, 2)}x`, 'Total NOI / total debt service'),
+    metric('Refinance equity gap', money(investment.refinance_gap), 'Existing balance less modeled capacity'),
+    metric('Unlevered DCF value', money(investment.dcf_value), 'Before recurring capital expenditure'),
+    metric('Cash after debt', money(investment.cash_after_debt), 'Annualized, before capital expenditure'),
+  ].join('');
+  document.querySelector('#creditTable').innerHTML = table(
+    ['Property', 'Debt yield', 'Break-even occupancy', 'Refinance gap', 'Binding limit'],
+    investment.credit.slice(0, 8).map(item => `<tr><td>${item.property_name}</td><td>${percent(item.debt_yield)}</td><td>${percent(item.break_even_occupancy)}</td><td>${money(item.refinance_gap)}</td><td>${item.binding_constraint}</td></tr>`)
+  );
+  document.querySelector('#historicalMetrics').innerHTML = [
+    metric('Monthly NOI volatility', percent(history.monthly_noi_volatility), `${history.observations} aligned observations`),
+    metric('95% historical NOI VaR', percent(history.historical_noi_var_95), 'Monthly change loss quantile'),
+    metric('95% expected shortfall', percent(history.historical_noi_es_95), 'Average tail NOI decline'),
+    metric('Effective asset count', number(history.effective_assets), `Value HHI ${number(history.value_hhi, 3)}`),
+  ].join('');
+  renderBars('#riskContribution', history.attribution, 'property', 'variance_share', percent);
+  document.querySelector('#historicalMethod').textContent = history.method + ' Contributions sum to 100%; negative contributions indicate diversification.';
 }
 
 document.querySelectorAll("#controls input").forEach((input) => {

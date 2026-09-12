@@ -7,6 +7,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+from engine.investment import optimize_projects, validate_financials
 
 
 ROOT = Path(__file__).resolve().parent
@@ -259,6 +260,7 @@ def generate_sample_data(property_count: int = 24, months: int = 48, seed: int =
 
 
 def write_sqlite(data: dict[str, pd.DataFrame], db_path: Path) -> None:
+    validate_financials(data["monthly_financials"])
     if db_path.exists():
         db_path.unlink()
     with sqlite3.connect(db_path) as conn:
@@ -340,6 +342,14 @@ def apply_scenario(frame: pd.DataFrame, scenario: dict[str, float]) -> pd.DataFr
     )
     stressed["dscr"] = stressed["noi"] / stressed["debt_service"]
     stressed["ltv"] = stressed["loan_balance"] / stressed["property_value"]
+    stressed["noi_margin"] = stressed["noi"] / stressed["revenue"]
+    stressed["noi_yoy"] = stressed["noi"] / stressed["noi_12m_ago"] - 1
+    stressed["expense_yoy"] = stressed["operating_expenses"] / stressed["expenses_12m_ago"] - 1
+    stressed["occupancy_change"] = stressed["occupancy"] - stressed["occupancy_12m_ago"]
+    stressed["cash_flow"] = stressed["noi"] - stressed["debt_service"]
+    stressed["cap_rate_actual"] = stressed["noi"] * 12 / stressed["property_value"]
+    for source, target in [("revenue", "revenue_per_unit"), ("operating_expenses", "opex_per_unit"), ("noi", "noi_per_unit")]:
+        stressed[target] = stressed[source] / stressed["units"]
     return stressed
 
 
@@ -389,17 +399,7 @@ def prioritize_capital(scored: pd.DataFrame, projects: pd.DataFrame, budget: flo
         + joined["risk_reduction_points"] * 2
         + joined["risk_score"] * 0.25
     )
-    selected = []
-    remaining_budget = budget
-    for _, row in joined.sort_values("priority_score", ascending=False).iterrows():
-        if row["capital_required"] <= remaining_budget:
-            selected.append(row)
-            remaining_budget -= row["capital_required"]
-    result = pd.DataFrame(selected)
-    if result.empty:
-        return result
-    result["selected_order"] = range(1, len(result) + 1)
-    return result
+    return optimize_projects(joined, budget)
 
 
 def run_pipeline(output_dir: Path | None = None) -> dict[str, object]:

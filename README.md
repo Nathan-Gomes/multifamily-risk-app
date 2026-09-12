@@ -95,3 +95,12 @@ https://nathan-fergo-risk-analyst.onrender.com
 ```
 
 This demo uses generated sample data only. It does not connect to real bank accounts, accounting systems, or client data.
+# Investment analytics upgrade
+
+The live workspace includes refinance capacity and equity gaps, debt yield, break-even occupancy, aggregate DSCR, five-year unlevered DCF, historical monthly NOI covariance and risk attribution, historical NOI VaR/expected shortfall, and concentration HHI. Scenario changes recalculate operating ratios and the constrained capital plan.
+
+Capital planning uses SciPy's mixed-integer solver with binary selections, a budget limit and at most one project per property. The objective is an explicit analyst priority score, not a claim of maximum investment return.
+
+Python/pandas implement the analytics; SQL joins and window functions assemble operating history. `python scripts/export_research.py` creates reconciled CSVs for independent review. MATLAB scripts in `matlab/` reproduce debt, DSCR and DCF calculations, generate credit plots, and compare the capital optimization objective using `intlinprog`. MATLAB scripts are provided but have not been executed in a licensed MATLAB environment here.
+
+See [investment methodology](docs/investment-methodology.md) for financial conventions, assumptions, limitations and commands. Source data and project benefits are synthetic. CSV exports support Tableau import; no Tableau workbook or Databricks deployment is claimed.

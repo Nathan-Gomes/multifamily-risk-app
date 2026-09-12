@@ -18,6 +18,7 @@
       <a href="#risk">Risk</a>
       <a href="#scenarios">Scenarios</a>
       <a href="#capital">Capital Plan</a>
+      <a href="#investment">Investment review</a>
       <a href="#properties">Properties</a>
     </nav>
     <div class="sidebar-note">
@@ -139,9 +140,22 @@
           <p class="eyebrow">Capital planning</p>
           <h2>Recommended project queue</h2>
         </div>
-        <span class="hint">Ranked by return, risk reduction, current risk, and budget fit</span>
+        <span class="hint">Binary optimization: budget limit, one project per property</span>
       </div>
       <div id="capitalTable" class="table-wrap"></div>
+    </section>
+
+    <section id="investment" class="panel">
+      <div class="panel-head"><div><p class="eyebrow">Investment committee</p><h2>Credit capacity and valuation</h2></div><a href="/api/research/metrics">Download base metrics</a></div>
+      <div id="investmentMetrics" class="scenario-summary"></div>
+      <p class="hint">Illustrative underwriting: 65% maximum LTV, 1.25x minimum DSCR. DCF: five years, 2% NOI growth, 8% discount rate, current exit cap rate, 2% sale costs. Not lender or CMHC eligibility criteria.</p>
+      <div id="creditTable" class="table-wrap"></div>
+    </section>
+    <section class="panel">
+      <div class="panel-head"><div><p class="eyebrow">Historical operating risk</p><h2>NOI variability and risk contribution</h2></div><a href="/api/research/monthly_financials">Download monthly data</a></div>
+      <div id="historicalMetrics" class="scenario-summary"></div>
+      <div id="riskContribution" class="bars"></div>
+      <p id="historicalMethod" class="hint"></p>
     </section>
 
     <section id="properties" class="split">

@@ -12,10 +12,12 @@ import pandas as pd
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
+from fastapi.responses import Response
 from fastapi.staticfiles import StaticFiles
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
+from engine.investment import credit_and_valuation, historical_risk
 
 from engine.risk_engine import (  # noqa: E402
     CONFIG,
@@ -23,6 +25,7 @@ from engine.risk_engine import (  # noqa: E402
     prioritize_capital,
     run_pipeline,
     score_properties,
+    monthly_debt_service,
 )
 
 FRONTEND = ROOT / "frontend"
@@ -123,6 +126,7 @@ def get_dashboard_payload(
     concentration["maturity"] = concentration["maturity"].sort_values("maturity_year")
     concentration["rate_type"] = concentration["rate_type"].sort_values("loan_balance", ascending=False)
     concentration["loan_type"] = concentration["loan_type"].sort_values("loan_balance", ascending=False)
+    scored = credit_and_valuation(scored, monthly_debt_service)
     capital = prioritize_capital(scored, result["data"]["capital_projects"], capital_budget)
     market = concentration["market"].copy()
     maturity = concentration["maturity"].copy()
@@ -145,6 +149,16 @@ def get_dashboard_payload(
     summary["selected_projects"] = int(len(capital))
     return {
         "summary": {key: clean_value(value) for key, value in summary.items()},
+        "investment": {
+            "aggregate_dscr": float(scored.noi.sum() / scored.debt_service.sum()),
+            "refinance_gap": float(scored.refinance_gap.sum()),
+            "dcf_value": float(scored.dcf_value.sum()),
+            "cash_after_debt": float(scored.cash_after_debt.sum()),
+            "history": historical_risk(result["data"]["monthly_financials"], scored),
+            "credit": records(scored.sort_values("refinance_gap", ascending=False)),
+            "assumptions": {"max_ltv": 0.65, "min_dscr": 1.25, "discount_rate": 0.08,
+                            "noi_growth": 0.02, "hold_years": 5, "sale_cost": 0.02},
+        },
         "properties": records(scored),
         "top_risk": records(scored.head(8)),
         "scenarios": records(result["scenarios"]),
@@ -219,6 +233,19 @@ def export_payload() -> dict[str, Any]:
         rate_shock_bps=CONFIG["scenarios"]["combined_downside"]["rate_shock_bps"],
         cap_rate_shock_bps=CONFIG["scenarios"]["combined_downside"]["cap_rate_shock_bps"],
     )
+
+
+@app.get("/api/research/{dataset}")
+def research_csv(dataset: str) -> Response:
+    result = base_pipeline()
+    if dataset == "metrics":
+        frame = credit_and_valuation(result["scored"], monthly_debt_service)
+    elif dataset in result["data"]:
+        frame = result["data"][dataset]
+    else:
+        raise HTTPException(status_code=404, detail="Unknown research dataset")
+    return Response(frame.to_csv(index=False), media_type="text/csv",
+                    headers={"Content-Disposition": f'attachment; filename="{dataset}.csv"'})
 
 
 app.mount("/assets", StaticFiles(directory=FRONTEND), name="assets")

@@ -6,3 +6,4 @@ venv/
 data/generated/
 engine/output/
 .DS_Store
+research_output/
