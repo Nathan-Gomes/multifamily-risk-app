@@ -1,3 +1,7 @@
+import csv
+from io import StringIO
+
+import pytest
 from fastapi.testclient import TestClient
 
 from backend.main import app
@@ -82,3 +86,36 @@ def test_property_detail_endpoint_rejects_unknown_property():
     response = client.get("/api/properties/UNKNOWN")
     assert response.status_code == 404
     assert response.json()["detail"] == "Property not found"
+
+
+@pytest.mark.parametrize(
+    "parameter,value",
+    [
+        ("capital_budget", -1),
+        ("occupancy_shock", -0.26),
+        ("expense_shock", 0.51),
+        ("rate_shock_bps", 601),
+        ("cap_rate_shock_bps", 401),
+    ],
+)
+def test_dashboard_endpoint_rejects_out_of_range_inputs(parameter, value):
+    response = client.get("/api/dashboard", params={parameter: value})
+    assert response.status_code == 422
+    assert response.json()["detail"][0]["loc"][-1] == parameter
+
+
+def test_research_metrics_endpoint_returns_downloadable_csv():
+    response = client.get("/api/research/metrics")
+    rows = list(csv.DictReader(StringIO(response.text)))
+
+    assert response.status_code == 200
+    assert response.headers["content-type"].startswith("text/csv")
+    assert response.headers["content-disposition"] == 'attachment; filename="metrics.csv"'
+    assert len(rows) == 24
+    assert {"property_id", "dscr", "ltv", "refinance_gap"} <= rows[0].keys()
+
+
+def test_research_endpoint_rejects_unknown_dataset():
+    response = client.get("/api/research/not-a-dataset")
+    assert response.status_code == 404
+    assert response.json()["detail"] == "Unknown research dataset"
