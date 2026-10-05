@@ -10,6 +10,8 @@ Operating statements are monthly CAD. NOI equals revenue less operating expenses
 
 Debt service uses a level-payment amortizing loan, monthly rate = nominal annual rate / 12. This is a simplified convention rather than a Canadian mortgage quotation engine. Aggregate DSCR is sum(NOI) / sum(debt service), distinct from the existing value-weighted average of individual DSCRs.
 
+Scenario value uses annualized NOI divided by the stressed cap rate. When stressed NOI is zero or negative, the income-approach value is floored at zero rather than reported as a negative property value. Asset-level LTV is then undefined and displayed as N/A, while the risk model assigns maximum LTV risk. Portfolio LTV remains total debt divided by total nonnegative scenario value.
+
 Refinance capacity is the lesser of 65% of value and annual NOI / (1.25 times the mortgage constant). Equity gap is max(existing balance minus capacity, 0). These are illustrative analyst assumptions, not CMHC rules. Every asset is assessed as if refinanced at its scenario rate; this is capacity analysis, not a dated cash-flow forecast. Existing rate-shock multipliers by loan type and maturity are heuristic assumptions, not insurer guarantees.
 
 The five-year unlevered DCF discounts annual NOI growing at 2%, plus year-six NOI capitalized at the current scenario cap rate and reduced by 2% sale costs. Discount rate is 8%. It omits recurring capital expenditure, taxes and lease-level detail, so it is an illustrative income valuation, not a full investment appraisal or equity IRR.

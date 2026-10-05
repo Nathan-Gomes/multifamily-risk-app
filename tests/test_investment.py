@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 import pytest
 from engine.investment import optimize_projects, credit_and_valuation, historical_risk, validate_financials
-from engine.risk_engine import monthly_debt_service, apply_scenario, generate_sample_data
+from engine.risk_engine import apply_scenario, generate_sample_data, monthly_debt_service, score_properties
 from backend.main import base_pipeline
 
 
@@ -38,6 +38,29 @@ def test_stress_refreshes_derived_metrics():
     assert np.allclose(result.noi_yoy, result.noi/result.noi_12m_ago-1)
     assert np.allclose(result.cash_flow, result.noi-result.debt_service)
     assert (result.noi < frame.noi).all()
+
+
+def test_extreme_downside_does_not_create_negative_values_or_safe_ltv_scores():
+    frame = base_pipeline()["scored"]
+    result = score_properties(
+        apply_scenario(
+            frame,
+            {
+                "occupancy_shock": -0.25,
+                "expense_shock": 0.50,
+                "rate_shock_bps": 600,
+                "cap_rate_shock_bps": 400,
+            },
+        )
+    )
+    no_positive_income = result["noi"] <= 0
+
+    assert no_positive_income.any()
+    assert result["property_value"].ge(0).all()
+    assert result.loc[no_positive_income, "property_value"].eq(0).all()
+    assert result.loc[no_positive_income, "ltv"].isna().all()
+    assert result.loc[no_positive_income, "ltv_risk"].eq(100).all()
+    assert result.loc[no_positive_income, "risk_band"].eq("High").all()
 
 
 def test_risk_attribution_reconciles():

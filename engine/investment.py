@@ -65,7 +65,7 @@ def credit_and_valuation(frame: pd.DataFrame, payment_function, *, discount_rate
     out["dcf_value"] = sum(annual_noi * (1 + growth) ** year / (1 + discount_rate) ** year
                            for year in range(1, 6))
     out["dcf_value"] += annual_noi * (1 + growth) ** 6 / out.cap_rate * 0.98 / (1 + discount_rate) ** 5
-    out["dcf_vs_cap_value"] = out.dcf_value / out.property_value - 1
+    out["dcf_vs_cap_value"] = out.dcf_value / out.property_value.where(out.property_value > 0) - 1
     return out
 
 

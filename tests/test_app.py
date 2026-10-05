@@ -104,6 +104,27 @@ def test_dashboard_endpoint_rejects_out_of_range_inputs(parameter, value):
     assert response.json()["detail"][0]["loc"][-1] == parameter
 
 
+def test_extreme_downside_serializes_unavailable_asset_ltv():
+    response = client.get(
+        "/api/dashboard",
+        params={
+            "occupancy_shock": -0.25,
+            "expense_shock": 0.50,
+            "rate_shock_bps": 600,
+            "cap_rate_shock_bps": 400,
+        },
+    )
+    payload = response.json()
+    no_positive_income = [row for row in payload["properties"] if row["noi"] <= 0]
+
+    assert response.status_code == 200
+    assert no_positive_income
+    assert all(row["property_value"] == 0 for row in no_positive_income)
+    assert all(row["ltv"] is None for row in no_positive_income)
+    assert all(row["risk_band"] == "High" for row in no_positive_income)
+    assert payload["summary"]["weighted_ltv"] > 0
+
+
 def test_research_metrics_endpoint_returns_downloadable_csv():
     response = client.get("/api/research/metrics")
     rows = list(csv.DictReader(StringIO(response.text)))

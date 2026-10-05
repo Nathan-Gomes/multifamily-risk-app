@@ -43,7 +43,10 @@ const money = (value) => {
   return `$${(number / 1_000).toFixed(0)}k`;
 };
 
-const percent = (value, digits = 1) => `${(Number(value || 0) * 100).toFixed(digits)}%`;
+const percent = (value, digits = 1) => {
+  if (value === null || value === undefined || !Number.isFinite(Number(value))) return "N/A";
+  return `${(Number(value) * 100).toFixed(digits)}%`;
+};
 const number = (value, digits = 1) => Number(value || 0).toFixed(digits);
 
 function riskClass(band) {
@@ -148,7 +151,8 @@ function renderRiskMatrix(properties) {
   const height = 500;
   const maxValue = Math.max(...properties.map((item) => item.property_value));
   const circles = properties.map((item) => {
-    const x = 72 + Math.max(0, Math.min(1, (item.ltv - 0.45) / 0.40)) * 760;
+    const matrixLtv = item.ltv === null ? 1 : item.ltv;
+    const x = 72 + Math.max(0, Math.min(1, (matrixLtv - 0.45) / 0.40)) * 760;
     const y = 420 - Math.max(0, Math.min(1, (item.dscr - 0.80) / 1.10)) * 340;
     const radius = Math.max(7, Math.min(22, item.property_value / maxValue * 24));
     const color = {

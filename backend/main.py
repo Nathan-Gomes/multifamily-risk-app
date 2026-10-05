@@ -17,7 +17,7 @@ from fastapi.staticfiles import StaticFiles
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
-from engine.investment import credit_and_valuation, historical_risk
+from engine.investment import credit_and_valuation, historical_risk  # noqa: E402
 
 from engine.risk_engine import (  # noqa: E402
     CONFIG,
@@ -137,7 +137,7 @@ def get_dashboard_payload(
     summary["base_annual_noi"] = result["summary"]["annual_noi"]
     summary["portfolio_value"] = float(scored["property_value"].sum())
     summary["annual_noi"] = float(scored["noi"].sum() * 12)
-    summary["weighted_ltv"] = float((scored["ltv"] * scored["property_value"]).sum() / scored["property_value"].sum())
+    summary["weighted_ltv"] = float(scored["loan_balance"].sum() / scored["property_value"].sum())
     summary["weighted_dscr"] = float((scored["dscr"] * scored["property_value"]).sum() / scored["property_value"].sum())
     summary["elevated_or_high"] = int(scored["risk_band"].isin(["Elevated", "High"]).sum())
     summary["cmhc_debt"] = float(scored.loc[scored["loan_type"].eq("CMHC-insured"), "loan_balance"].sum())

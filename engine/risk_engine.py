@@ -298,7 +298,7 @@ def score_properties(frame: pd.DataFrame, weights: dict[str, float] | None = Non
     weights = weights or CONFIG["risk_score_weights"]
     scored = frame.copy()
     scored["dscr_risk"] = normalize_risk(scored["dscr"], 1.05, 1.75, inverse=True)
-    scored["ltv_risk"] = normalize_risk(scored["ltv"], 0.50, 0.78)
+    scored["ltv_risk"] = normalize_risk(scored["ltv"], 0.50, 0.78).fillna(100)
     scored["occupancy_deterioration_risk"] = normalize_risk(-scored["occupancy_change"], 0.00, 0.08)
     scored["noi_deterioration_risk"] = normalize_risk(-scored["noi_yoy"], 0.00, 0.18)
     scored["expense_growth_risk"] = normalize_risk(scored["expense_yoy"], 0.02, 0.20)
@@ -335,19 +335,23 @@ def apply_scenario(frame: pd.DataFrame, scenario: dict[str, float]) -> pd.DataFr
         scenario["rate_shock_bps"] * stressed.apply(rate_shock_multiplier, axis=1) / 10000
     )
     stressed["cap_rate"] = stressed["cap_rate"] + scenario["cap_rate_shock_bps"] / 10000
-    stressed["property_value"] = (stressed["noi"] * 12) / stressed["cap_rate"]
+    stressed["property_value"] = (stressed["noi"].clip(lower=0) * 12) / stressed["cap_rate"]
     stressed["debt_service"] = stressed.apply(
         lambda row: monthly_debt_service(row["loan_balance"], row["interest_rate"], int(row["amortization_years"])),
         axis=1,
     )
     stressed["dscr"] = stressed["noi"] / stressed["debt_service"]
-    stressed["ltv"] = stressed["loan_balance"] / stressed["property_value"]
+    stressed["ltv"] = stressed["loan_balance"] / stressed["property_value"].where(
+        stressed["property_value"] > 0
+    )
     stressed["noi_margin"] = stressed["noi"] / stressed["revenue"]
     stressed["noi_yoy"] = stressed["noi"] / stressed["noi_12m_ago"] - 1
     stressed["expense_yoy"] = stressed["operating_expenses"] / stressed["expenses_12m_ago"] - 1
     stressed["occupancy_change"] = stressed["occupancy"] - stressed["occupancy_12m_ago"]
     stressed["cash_flow"] = stressed["noi"] - stressed["debt_service"]
-    stressed["cap_rate_actual"] = stressed["noi"] * 12 / stressed["property_value"]
+    stressed["cap_rate_actual"] = stressed["noi"] * 12 / stressed["property_value"].where(
+        stressed["property_value"] > 0
+    )
     for source, target in [("revenue", "revenue_per_unit"), ("operating_expenses", "opex_per_unit"), ("noi", "noi_per_unit")]:
         stressed[target] = stressed[source] / stressed["units"]
     return stressed
@@ -421,7 +425,7 @@ def run_pipeline(output_dir: Path | None = None) -> dict[str, object]:
         "property_count": int(scored["property_id"].nunique()),
         "unit_count": int(scored["units"].sum()),
         "annual_noi": float(scored["noi"].sum() * 12),
-        "weighted_ltv": float((scored["ltv"] * scored["property_value"]).sum() / scored["property_value"].sum()),
+        "weighted_ltv": float(scored["loan_balance"].sum() / scored["property_value"].sum()),
         "weighted_dscr": float((scored["dscr"] * scored["property_value"]).sum() / scored["property_value"].sum()),
         "elevated_or_high": int(scored["risk_band"].isin(["Elevated", "High"]).sum()),
         "debt_maturing_24m": float(scored.loc[scored["maturity_year"].le(2028), "loan_balance"].sum()),
