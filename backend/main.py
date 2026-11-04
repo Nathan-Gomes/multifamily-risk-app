@@ -22,6 +22,7 @@ from engine.investment import credit_and_valuation, historical_risk  # noqa: E40
 from engine.risk_engine import (  # noqa: E402
     CONFIG,
     apply_scenario,
+    concentration_summary,
     prioritize_capital,
     run_pipeline,
     score_properties,
@@ -107,25 +108,7 @@ def get_dashboard_payload(
         scored = base_scored.copy()
     else:
         scored = score_properties(apply_scenario(base_scored, custom_scenario))
-    concentration = {
-        "market": scored.groupby("market", as_index=False)["property_value"].sum(),
-        "maturity": scored.groupby("maturity_year", as_index=False)["loan_balance"].sum(),
-        "rate_type": scored.groupby("rate_type", as_index=False)["loan_balance"].sum(),
-        "loan_type": scored.groupby("loan_type", as_index=False)["loan_balance"].sum(),
-    }
-    concentration["market"]["exposure_pct"] = (
-        concentration["market"]["property_value"] / concentration["market"]["property_value"].sum()
-    )
-    concentration["rate_type"]["exposure_pct"] = (
-        concentration["rate_type"]["loan_balance"] / concentration["rate_type"]["loan_balance"].sum()
-    )
-    concentration["loan_type"]["exposure_pct"] = (
-        concentration["loan_type"]["loan_balance"] / concentration["loan_type"]["loan_balance"].sum()
-    )
-    concentration["market"] = concentration["market"].sort_values("property_value", ascending=False)
-    concentration["maturity"] = concentration["maturity"].sort_values("maturity_year")
-    concentration["rate_type"] = concentration["rate_type"].sort_values("loan_balance", ascending=False)
-    concentration["loan_type"] = concentration["loan_type"].sort_values("loan_balance", ascending=False)
+    concentration = concentration_summary(scored)
     scored = credit_and_valuation(scored, monthly_debt_service)
     capital = prioritize_capital(scored, result["data"]["capital_projects"], capital_budget)
     market = concentration["market"].copy()
@@ -142,6 +125,8 @@ def get_dashboard_payload(
     summary["elevated_or_high"] = int(scored["risk_band"].isin(["Elevated", "High"]).sum())
     summary["cmhc_debt"] = float(scored.loc[scored["loan_type"].eq("CMHC-insured"), "loan_balance"].sum())
     summary["cmhc_debt_share"] = float(summary["cmhc_debt"] / scored["loan_balance"].sum())
+    summary["largest_market"] = str(market.iloc[0]["market"])
+    summary["largest_market_exposure"] = float(market.iloc[0]["exposure_pct"])
     summary["scenario_value_change_pct"] = summary["portfolio_value"] / result["summary"]["portfolio_value"] - 1
     summary["scenario_noi_change_pct"] = summary["annual_noi"] / result["summary"]["annual_noi"] - 1
     summary["capital_budget"] = capital_budget

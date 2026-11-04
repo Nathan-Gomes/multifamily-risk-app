@@ -45,6 +45,32 @@ def test_custom_stress_scenario_reduces_value():
     assert payload["custom_scenario"]["properties_below_1_10_dscr"] >= 0
 
 
+def test_scenario_summary_uses_current_market_concentration():
+    base = get_dashboard_payload(
+        capital_budget=2_000_000,
+        occupancy_shock=0,
+        expense_shock=0,
+        rate_shock_bps=0,
+        cap_rate_shock_bps=0,
+    )
+    stressed = get_dashboard_payload(
+        capital_budget=2_000_000,
+        occupancy_shock=-0.25,
+        expense_shock=0.50,
+        rate_shock_bps=600,
+        cap_rate_shock_bps=400,
+    )
+    leading_market = stressed["concentration"]["market"][0]
+
+    assert stressed["summary"]["largest_market"] == leading_market["market"]
+    assert stressed["summary"]["largest_market_exposure"] == pytest.approx(
+        leading_market["exposure_pct"]
+    )
+    assert stressed["summary"]["largest_market_exposure"] != pytest.approx(
+        base["summary"]["largest_market_exposure"]
+    )
+
+
 def test_capital_budget_is_respected():
     budget = 1_250_000
     payload = get_dashboard_payload(
