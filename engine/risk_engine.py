@@ -426,7 +426,7 @@ def run_pipeline(output_dir: Path | None = None) -> dict[str, object]:
         "unit_count": int(scored["units"].sum()),
         "annual_noi": float(scored["noi"].sum() * 12),
         "weighted_ltv": float(scored["loan_balance"].sum() / scored["property_value"].sum()),
-        "weighted_dscr": float((scored["dscr"] * scored["property_value"]).sum() / scored["property_value"].sum()),
+        "weighted_dscr": float(scored["noi"].sum() / scored["debt_service"].sum()),
         "elevated_or_high": int(scored["risk_band"].isin(["Elevated", "High"]).sum()),
         "debt_maturing_24m": float(scored.loc[scored["maturity_year"].le(2028), "loan_balance"].sum()),
         "cmhc_debt": float(scored.loc[scored["loan_type"].eq("CMHC-insured"), "loan_balance"].sum()),

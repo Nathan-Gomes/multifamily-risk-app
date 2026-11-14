@@ -121,7 +121,7 @@ def get_dashboard_payload(
     summary["portfolio_value"] = float(scored["property_value"].sum())
     summary["annual_noi"] = float(scored["noi"].sum() * 12)
     summary["weighted_ltv"] = float(scored["loan_balance"].sum() / scored["property_value"].sum())
-    summary["weighted_dscr"] = float((scored["dscr"] * scored["property_value"]).sum() / scored["property_value"].sum())
+    summary["weighted_dscr"] = float(scored["noi"].sum() / scored["debt_service"].sum())
     summary["elevated_or_high"] = int(scored["risk_band"].isin(["Elevated", "High"]).sum())
     summary["cmhc_debt"] = float(scored.loc[scored["loan_type"].eq("CMHC-insured"), "loan_balance"].sum())
     summary["cmhc_debt_share"] = float(summary["cmhc_debt"] / scored["loan_balance"].sum())

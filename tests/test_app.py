@@ -5,6 +5,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from backend.main import app
+from backend.main import base_pipeline
 from backend.main import get_dashboard_payload
 
 
@@ -81,6 +82,23 @@ def test_capital_budget_is_respected():
         cap_rate_shock_bps=100,
     )
     assert payload["summary"]["selected_capital"] <= budget
+
+
+def test_weighted_dscr_reconciles_to_aggregate_debt_service():
+    result = base_pipeline()
+    expected = result["scored"]["noi"].sum() / result["scored"]["debt_service"].sum()
+    payload = get_dashboard_payload(
+        capital_budget=2_000_000,
+        occupancy_shock=-0.25,
+        expense_shock=0.50,
+        rate_shock_bps=600,
+        cap_rate_shock_bps=400,
+    )
+
+    assert result["summary"]["weighted_dscr"] == pytest.approx(expected)
+    assert payload["summary"]["weighted_dscr"] == pytest.approx(
+        payload["investment"]["aggregate_dscr"]
+    )
 
 
 def test_cmhc_debt_is_reported():
