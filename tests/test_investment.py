@@ -78,3 +78,11 @@ def test_duplicate_and_invalid_financials_rejected():
     data.loc[0, 'noi'] += 100
     with pytest.raises(ValueError, match='reconciliation'):
         validate_financials(data)
+
+
+def test_financial_reconciliation_uses_absolute_cent_tolerance():
+    data = generate_sample_data()['monthly_financials']
+    data.loc[0, 'noi'] += 1
+
+    with pytest.raises(ValueError, match='reconciliation'):
+        validate_financials(data)

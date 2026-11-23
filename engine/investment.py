@@ -15,7 +15,12 @@ def validate_financials(history: pd.DataFrame) -> None:
         raise ValueError("Non-finite financial data")
     if not history.occupancy.between(0, 1).all():
         raise ValueError("Occupancy outside 0-100%")
-    if not np.allclose(history.noi, history.revenue - history.operating_expenses, atol=0.01):
+    if not np.allclose(
+        history.noi,
+        history.revenue - history.operating_expenses,
+        rtol=0,
+        atol=0.01,
+    ):
         raise ValueError("NOI reconciliation failed")
 
 
